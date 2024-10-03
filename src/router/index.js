@@ -1,15 +1,42 @@
+/* eslint-disable */
 import { createRouter, createWebHistory } from "vue-router";
 import { routes } from "./routes";
+import { account } from "@/api";
 
 const router = createRouter({
-   // eslint-disable-next-line no-unused-vars
    scrollBehavior(__to, __from, __savedPosition) {
       return { top: 0 };
    },
    history: createWebHistory(process.env.BASE_URL),
    routes,
 });
-// eslint-disable-next-line
-router.beforeEach(async (to, from, next) => {});
+
+const accountRoutes = [ "login", "register"]
+
+router.beforeEach(async (to, from, next) => {
+   let isLoggedIn = false;
+
+   try {
+      // Cek apakah pengguna sudah memiliki sesi aktif
+      const session = await account.getSession("current");
+      isLoggedIn = !!session; // Jika session ada, berarti pengguna sudah login
+   } catch {
+      isLoggedIn = false; // Jika error, berarti tidak ada sesi
+   }
+
+   if (!isLoggedIn) {
+      if (to.name !== "Login" && to.name !== "Register") {
+        next({ name: 'Register' }); 
+      } else {
+        next();
+      }
+    } else {
+      if (to.name === 'Login' || to.name === 'Register') {
+        next({ name: 'Home' });
+      } else {
+        next();
+      }
+    }
+});
 
 export default router;
